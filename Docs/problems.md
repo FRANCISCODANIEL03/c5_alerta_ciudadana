@@ -1,4 +1,4 @@
-Hay un problema de autenticación con la auntenticación con mi compañero Emilio Rivera Facio. Por el cual no pudo subir su parte del proyecto.
+Hay un problema con la auntenticación de GitHub del compañero Emilio Rivera Facio. Por el cual no pudo subir su parte del proyecto.
 
 ```bash
 'git <command> [<revision>...] -- [<file>...]'

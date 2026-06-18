@@ -14,11 +14,9 @@ function HistoryTable() {
   const fetchHistory = async () => {
     setLoading(true);
     try {
-      // Construimos dinámicamente los parámetros de la URL
       const queryParams = new URLSearchParams();
 
       if (startDate && endDate) {
-        // Al enviar las fechas, agregamos horas para cubrir el rango del día completo en PostgreSQL
         queryParams.append("start_date", `${startDate} 00:00:00`);
         queryParams.append("end_date", `${endDate} 23:59:59`);
       }
@@ -31,7 +29,6 @@ function HistoryTable() {
         queryParams.append("priority_level", priority);
       }
 
-      // Concatenamos los parámetros a la URL base
       const url = `http://localhost:4000/api/historial?${queryParams.toString()}`;
 
       const response = await fetch(url);
@@ -46,8 +43,32 @@ function HistoryTable() {
     }
   };
 
+  // Función para actualizar el estado de la alerta
+  const handleNotify = async (id) => {
+    try {
+      const response = await fetch(
+        `http://localhost:4000/api/historial/${id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          // Enviamos el nuevo estado que queremos guardar
+          body: JSON.stringify({ status: "notificada" }),
+        },
+      );
+
+      if (response.ok) {
+        // Volvemos a consultar el historial para que la tabla se actualice en pantalla
+        fetchHistory();
+      }
+    } catch (error) {
+      console.error("Error al actualizar el estado:", error);
+    }
+  };
+
   useEffect(() => {
-    // Carga inicial del historial (sin filtros para mostrar todo)
+    // Carga inicial del historial
     fetchHistory();
   }, []);
 
@@ -61,7 +82,6 @@ function HistoryTable() {
         </div>
 
         <div className="history-filters">
-          {/* Filtro: Rango de Fechas */}
           <div className="search-box">
             <input
               type="date"
@@ -79,7 +99,6 @@ function HistoryTable() {
             />
           </div>
 
-          {/* Filtro: Zona Geográfica */}
           <div className="search-box">
             <input
               type="text"
@@ -89,7 +108,6 @@ function HistoryTable() {
             />
           </div>
 
-          {/* Filtro: Nivel de Prioridad */}
           <select
             className="tactical-select"
             value={priority}
@@ -116,14 +134,16 @@ function HistoryTable() {
               <th>DISPOSITIVO</th>
               <th>TIPO</th>
               <th>ZONA</th>
+              <th>COORDENADAS</th>
               <th>ESTADO</th>
+              <th>ACCIONES</th>
             </tr>
           </thead>
           <tbody>
             {history.length === 0 && !loading ? (
               <tr>
                 <td
-                  colSpan="6"
+                  colSpan="8"
                   style={{
                     textAlign: "center",
                     padding: "20px",
@@ -145,12 +165,26 @@ function HistoryTable() {
                     {row.emergency_type}
                   </td>
                   <td>{row.zone}</td>
+                  <td className="cell-gps">
+                    {row.lat}, {row.lon}
+                  </td>
                   <td>
                     <span
-                      className={`badge-status ${row.status === "Notificada" ? "status-green" : "status-red"}`}
+                      className={`badge-status ${row.status.toLowerCase() === "notificada" ? "status-green" : "status-red"}`}
                     >
                       {row.status.toUpperCase()}
                     </span>
+                  </td>
+                  <td>
+                    {/* El botón solo se renderiza si el estado es 'pendiente' */}
+                    {row.status.toLowerCase() === "pendiente" && (
+                      <button
+                        className="btn btn-sm btn-neon-blue"
+                        onClick={() => handleNotify(row.alert_id)}
+                      >
+                        NOTIFICAR
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
